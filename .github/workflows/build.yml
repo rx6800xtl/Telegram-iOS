@@ -65,6 +65,7 @@ jobs:
           export COMMIT_COUNT="$(($COMMIT_COUNT+$BUILD_NUMBER_OFFSET))"
           export BUILD_NUMBER="$COMMIT_COUNT"
 
+          cp build-system/fake-codesigning/BroadcastUpload.mobileprovision build-system/fake-codesigning/profiles/ 2>/dev/null || true
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
 
           python3 -u build-system/Make/Make.py \
