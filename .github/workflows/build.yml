@@ -38,13 +38,18 @@ jobs:
           fetch_sub third-party/td/td                            https://github.com/tdlib/td.git                                e894536b2f46caad93f997448d2daff9431b19dd
           fetch_sub third-party/webrtc/webrtc                    https://github.com/ali-fareed/webrtc.git                       d5c77d3588c9353dd48b80430d2ffb41dafef177
 
-      - name: Set active Xcode path
+      - name: Select Xcode and prepare platform
         run: |
           XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["xcode"]);')
           if [ -d "/Applications/Xcode_$XCODE_VERSION.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_$XCODE_VERSION.app/Contents/Developer
+            sudo xcode-select -s "/Applications/Xcode_$XCODE_VERSION.app/Contents/Developer"
+          elif [ -d "/Applications/Xcode_16.1.app" ]; then
+            sudo xcode-select -s "/Applications/Xcode_16.1.app/Contents/Developer"
+          elif [ -d "/Applications/Xcode_16.0.app" ]; then
+            sudo xcode-select -s "/Applications/Xcode_16.0.app/Contents/Developer"
           fi
           xcodebuild -version
+          xcrun --show-sdk-path --sdk iphoneos || true
 
       - name: Create canonical source directory
         run: |
@@ -62,7 +67,7 @@ jobs:
           BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
           export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
           export COMMIT_COUNT=$(git rev-list --count HEAD)
-          export COMMIT_COUNT="$(($COMMIT_COUNT+$BUILD_NUMBER_OFFSET))"
+          export COMMIT_COUNT="$(("$COMMIT_COUNT+$BUILD_NUMBER_OFFSET"))"
           export BUILD_NUMBER="$COMMIT_COUNT"
 
           cp build-system/fake-codesigning/BroadcastUpload.mobileprovision build-system/fake-codesigning/profiles/ 2>/dev/null || true
