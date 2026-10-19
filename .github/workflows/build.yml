@@ -64,14 +64,18 @@ jobs:
           BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
           cd $SOURCE_DIR
 
-          BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
+          BUILD_NUMBER_OFFSET=$(tr -d '\r\n' < build_number_offset)
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          BUILD_NUMBER=$((COMMIT_COUNT + BUILD_NUMBER_OFFSET))
+          export BUILD_NUMBER
           export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
-          export COMMIT_COUNT=$(git rev-list --count HEAD)
-          export COMMIT_COUNT="$(("$COMMIT_COUNT+$BUILD_NUMBER_OFFSET"))"
-          export BUILD_NUMBER="$COMMIT_COUNT"
 
           cp build-system/fake-codesigning/BroadcastUpload.mobileprovision build-system/fake-codesigning/profiles/ 2>/dev/null || true
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
+
+          # Set system date back to 2025-01-01 during build so fake provisioning profiles (exp. Oct 2025) are valid
+          sudo sntp -sS time.apple.com 2>/dev/null || true
+          sudo date -u 010100002025.00
 
           python3 -u build-system/Make/Make.py \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
@@ -82,6 +86,8 @@ jobs:
             --codesigningInformationPath=build-system/fake-codesigning \
             --configuration=release_arm64 \
             --buildNumber="$BUILD_NUMBER"
+
+          sudo sntp -sS time.apple.com 2>/dev/null || true
 
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
