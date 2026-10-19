@@ -335,7 +335,7 @@ alternate_icon_folders = [
 filegroup(
     name = "LaunchScreen",
     srcs = glob([
-        "Telegram-iOS/Base.lproj/LaunchScreen.xib",
+        "Telegram-iOS/Base.lproj/LaunchScreen.nib",
     ]),
 )
 
