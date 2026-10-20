@@ -38,6 +38,9 @@ jobs:
           fetch_sub third-party/td/td                            https://github.com/tdlib/td.git                                e894536b2f46caad93f997448d2daff9431b19dd
           fetch_sub third-party/webrtc/webrtc                    https://github.com/ali-fareed/webrtc.git                       d5c77d3588c9353dd48b80430d2ffb41dafef177
 
+          # Disable profile expiration check in rules_apple plisttool
+          find build-system/bazel-rules/rules_apple -name "plisttool.py" -exec sed -i '' 's/if expire and expire < datetime.datetime.now():/if False and expire < datetime.datetime.now():/g' {} +
+
       - name: Select Xcode and prepare platform
         run: |
           XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["xcode"]);')
@@ -70,19 +73,8 @@ jobs:
           export BUILD_NUMBER
           export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
 
-          # Pre-download Bazel binary while system time and HTTPS certs are active
-          mkdir -p build-input
-          curl -k -L "https://github.com/bazelbuild/bazel/releases/download/8.3.1/bazel-8.3.1-darwin-arm64" -o "build-input/bazel-8.3.1-darwin-arm64"
-          chmod +x "build-input/bazel-8.3.1-darwin-arm64"
-
           cp build-system/fake-codesigning/BroadcastUpload.mobileprovision build-system/fake-codesigning/profiles/ 2>/dev/null || true
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
-
-          # In ~/.curlrc and git config, disable SSL strict check if curl is spawned after date rewind
-          echo "insecure" > ~/.curlrc
-
-          # Set system date back to 2025-01-01 so fake provisioning profiles (exp. Oct 2025) are valid
-          sudo date -u 010100002025.00
 
           python3 -u build-system/Make/Make.py \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
@@ -93,9 +85,6 @@ jobs:
             --codesigningInformationPath=build-system/fake-codesigning \
             --configuration=release_arm64 \
             --buildNumber="$BUILD_NUMBER"
-
-          sudo sntp -sS time.apple.com 2>/dev/null || true
-          rm -f ~/.curlrc
 
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
