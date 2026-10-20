@@ -70,11 +70,18 @@ jobs:
           export BUILD_NUMBER
           export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
 
+          # Pre-download Bazel binary while system time and HTTPS certs are active
+          mkdir -p build-input
+          curl -k -L "https://github.com/bazelbuild/bazel/releases/download/8.3.1/bazel-8.3.1-darwin-arm64" -o "build-input/bazel-8.3.1-darwin-arm64"
+          chmod +x "build-input/bazel-8.3.1-darwin-arm64"
+
           cp build-system/fake-codesigning/BroadcastUpload.mobileprovision build-system/fake-codesigning/profiles/ 2>/dev/null || true
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
 
-          # Set system date back to 2025-01-01 during build so fake provisioning profiles (exp. Oct 2025) are valid
-          sudo sntp -sS time.apple.com 2>/dev/null || true
+          # In ~/.curlrc and git config, disable SSL strict check if curl is spawned after date rewind
+          echo "insecure" > ~/.curlrc
+
+          # Set system date back to 2025-01-01 so fake provisioning profiles (exp. Oct 2025) are valid
           sudo date -u 010100002025.00
 
           python3 -u build-system/Make/Make.py \
@@ -88,6 +95,7 @@ jobs:
             --buildNumber="$BUILD_NUMBER"
 
           sudo sntp -sS time.apple.com 2>/dev/null || true
+          rm -f ~/.curlrc
 
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
