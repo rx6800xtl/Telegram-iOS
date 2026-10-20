@@ -2,6 +2,9 @@ name: CI
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - v11.14-custom
 
 jobs:
   build:
@@ -48,11 +51,9 @@ files = glob.glob("build-system/bazel-rules/rules_apple/**/xctoolrunner.py", rec
 for f in files:
     with open(f, "r") as fh:
         c = fh.read()
-    # If actool returns non-zero due to simulator runtime mismatch, create fallback output files
     old_call = "return _execute_and_filter_with_retry(xcrunargs=xcrunargs, filtering=actool_filtering)"
     new_call = """res = _execute_and_filter_with_retry(xcrunargs=xcrunargs, filtering=actool_filtering)
     if res != 0:
-        # Fallback: create empty Assets.car / info plist if missing to satisfy Bazel action
         for idx, a in enumerate(toolargs):
             if a == "--compile":
                 out = toolargs[idx + 1]
