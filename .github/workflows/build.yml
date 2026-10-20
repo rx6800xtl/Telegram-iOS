@@ -39,6 +39,7 @@ jobs:
           fetch_sub third-party/webrtc/webrtc                    https://github.com/ali-fareed/webrtc.git                       d5c77d3588c9353dd48b80430d2ffb41dafef177
 
           find build-system/bazel-rules/rules_apple -name "plisttool.py" -exec sed -i '' 's/if expire and expire < datetime.datetime.now():/if False and expire < datetime.datetime.now():/g' {} +
+          python3 build-system/patch_actool.py || true
 
       - name: Select Xcode and prepare platform
         run: |
@@ -50,8 +51,6 @@ jobs:
           fi
           xcodebuild -version
           xcrun --show-sdk-path --sdk iphoneos || true
-          # Pre-warm simulator service so actool does not fail on missing simulator runtime
-          xcrun simctl list runtimes || true
 
       - name: Create canonical source directory
         run: |
