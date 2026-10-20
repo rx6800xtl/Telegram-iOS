@@ -46,13 +46,12 @@ jobs:
           XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["xcode"]);')
           if [ -d "/Applications/Xcode_$XCODE_VERSION.app" ]; then
             sudo xcode-select -s "/Applications/Xcode_$XCODE_VERSION.app/Contents/Developer"
-          elif [ -d "/Applications/Xcode_16.1.app" ]; then
-            sudo xcode-select -s "/Applications/Xcode_16.1.app/Contents/Developer"
-          elif [ -d "/Applications/Xcode_16.0.app" ]; then
-            sudo xcode-select -s "/Applications/Xcode_16.0.app/Contents/Developer"
+          elif [ -d "/Applications/Xcode_16.2.app" ]; then
+            sudo xcode-select -s "/Applications/Xcode_16.2.app/Contents/Developer"
           fi
           xcodebuild -version
           xcrun --show-sdk-path --sdk iphoneos || true
+          xcrun --show-sdk-path --sdk iphonesimulator || true
 
       - name: Create canonical source directory
         run: |
